@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>React + Colyseus RPS</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 700px;
+        margin: 40px auto;
+        padding: 0 16px;
+      }
+
+      button {
+        margin-right: 8px;
+        margin-bottom: 8px;
+        padding: 10px 16px;
+        font-size: 16px;
+      }
+
+      pre {
+        padding: 12px;
+        background: #f3f3f3;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/colyseus.js@0.15.14/dist/colyseus.js"></script>
+
+    <script type="text/babel">
+      const { useEffect, useState } = React;
+
+      function App() {
+        const [room, setRoom] = useState(null);
+        const [me, setMe] = useState("");
+        const [state, setState] = useState({ players: {}, result: "" });
+
+        useEffect(() => {
+          const client = new Colyseus.Client("ws://localhost:3000");
+
+          client.joinOrCreate("rps").then((joinedRoom) => {
+            setRoom(joinedRoom);
+            setMe(joinedRoom.sessionId);
+
+            joinedRoom.onStateChange((nextState) => {
+              setState({
+                players: nextState.players.toJSON(),
+                result: nextState.result,
+              });
+            });
+          });
+        }, []);
+
+        const players = Object.values(state.players);
+        const mePlayer = state.players[me];
+        const otherPlayer = players.find((player) => player.id !== me);
+        const ready = players.length === 2;
+        const picked = mePlayer && mePlayer.choice;
+
+        let resultText = "Waiting for 2 players";
+        if (ready && !state.result) resultText = "Pick one";
+        if (picked && !state.result) resultText = "Waiting for other player";
+        if (state.result === "tie") resultText = "Tie";
+        if (state.result && state.result !== "tie") {
+          resultText = state.result === me ? "You win" : "You lose";
+        }
+
+        return (
+          <div>
+            <h1>Rock Paper Scissors</h1>
+            <p>Open this page in 2 tabs.</p>
+            <p>{resultText}</p>
+
+            <div>
+              <button disabled={!room || !ready || picked || state.result} onClick={() => room.send("pick", "rock")}>
+                rock
+              </button>
+              <button disabled={!room || !ready || picked || state.result} onClick={() => room.send("pick", "paper")}>
+                paper
+              </button>
+              <button disabled={!room || !ready || picked || state.result} onClick={() => room.send("pick", "scissors")}>
+                scissors
+              </button>
+              <button disabled={!room || !state.result} onClick={() => room.send("reset")}>
+                reset
+              </button>
+            </div>
+
+            <h2>What you picked</h2>
+            <p>{mePlayer ? mePlayer.choice || "(nothing yet)" : "(joining...)"}</p>
+
+            <h2>Other player picked</h2>
+            <p>{otherPlayer ? otherPlayer.choice || "(nothing yet)" : "(no opponent yet)"}</p>
+
+            <h2>State from server</h2>
+            <pre>{JSON.stringify(state, null, 2)}</pre>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("app")).render(<App />);
+    </script>
+  </body>
+</html>
