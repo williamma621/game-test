@@ -4,6 +4,7 @@ const colyseus = require("colyseus");
 const { WebSocketTransport } = require("@colyseus/ws-transport");
 const { Schema, MapSchema, type } = require("@colyseus/schema");
 
+
 class Player extends Schema {
   constructor() {
     super();
@@ -78,6 +79,9 @@ const server = http.createServer(app);
 const gameServer = new colyseus.Server({
   transport: new WebSocketTransport({ server }),
 });
+app.use(cors({
+    origin: '*'
+}));
 
 gameServer.define("rps", RpsRoom);
 app.use(express.static("public"));
