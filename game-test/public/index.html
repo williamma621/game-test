@@ -42,7 +42,7 @@
         const [state, setState] = useState({ players: {}, result: "" });
 
         useEffect(() => {
-          const client = new Colyseus.Client("wss://game-test-production-09a0.up.railway.app/");
+          const client = new Colyseus.Client("wss://game-test-production-09a0.up.railway.app");
 
           client.joinOrCreate("rps").then((joinedRoom) => {
             setRoom(joinedRoom);

@@ -1,6 +1,8 @@
 const http = require("http");
 const express = require("express");
 const colyseus = require("colyseus");
+const cors = require("cors");
+
 const { WebSocketTransport } = require("@colyseus/ws-transport");
 const { Schema, MapSchema, type } = require("@colyseus/schema");
 
@@ -74,19 +76,19 @@ class RpsRoom extends colyseus.Room {
   }
 }
 
+
+
 const app = express();
 const server = http.createServer(app);
 const gameServer = new colyseus.Server({
   transport: new WebSocketTransport({ server }),
 });
-app.use(cors({
-    origin: '*'
-}));
 
 gameServer.define("rps", RpsRoom);
 app.use(express.static("public"));
-
-gameServer.listen(3000);
+app.use(cors());
+const PORT = process.env.PORT || 3000;
+gameServer.listen(PORT);
 server.on("listening", () => {
-  console.log("open http://localhost:3000");
+  console.log("listening on", PORT);
 });
